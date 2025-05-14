@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Heart Crush</title>
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 20px;
+      background: linear-gradient(to right, #ffe0ec, #ffbad2);
+      font-family: Arial, sans-serif;
+      text-align: center;
+    }
+
+    h1 {
+      color: #d6006b;
+      margin-bottom: 10px;
+    }
+
+    .container {
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 4px;
+      margin: 20px 0;
+    }
+
+    .cell {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      font-size: 2rem;
+      background: #fff;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      user-select: none;
+      cursor: grab;
+    }
+
+    .score, .controls {
+      margin-top: 10px;
+      font-size: 18px;
+      background: white;
+      padding: 10px;
+      border-radius: 10px;
+      display: inline-block;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+
+    button {
+      margin-top: 10px;
+      padding: 10px 20px;
+      background-color: #ff4d94;
+      border: none;
+      color: white;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    button:hover {
+      background-color: #e60073;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Heart Crush</h1>
+  <div class="container">
+    <div class="grid" id="grid"></div>
+    <div class="score">Score: <span id="score">0</span></div>
+    <div class="controls">
+      <button onclick="restartGame()">Restart Game</button>
+    </div>
+  </div>
+
+  <script>
+    const grid = document.getElementById('grid');
+    const scoreDisplay = document.getElementById('score');
+    const width = 8;
+    const colors = ['❤️', '🧡', '💛', '💚', '💙', '💜', '🤎', '🖤'];
+    let cells = [];
+    let score = 0;
+
+    let draggedId = null;
+    let replacedId = null;
+
+    function createBoard() {
+      grid.innerHTML = '';
+      cells = [];
+      for (let i = 0; i < width * width; i++) {
+        const cell = document.createElement('div');
+        cell.setAttribute('draggable', true);
+        cell.setAttribute('data-id', i);
+        cell.classList.add('cell');
+        cell.innerText = randomHeart();
+        grid.appendChild(cell);
+        cells.push(cell);
+      }
+      addDragEvents();
+    }
+
+    function randomHeart() {
+      return colors[Math.floor(Math.random() * colors.length)];
+    }
+
+    function addDragEvents() {
+      cells.forEach(cell => {
+        cell.addEventListener('dragstart', dragStart);
+        cell.addEventListener('dragover', e => e.preventDefault());
+        cell.addEventListener('drop', dragDrop);
+        cell.addEventListener('dragend', dragEnd);
+      });
+    }
+
+    function dragStart() {
+      draggedId = parseInt(this.getAttribute('data-id'));
+    }
+
+    function dragDrop() {
+      replacedId = parseInt(this.getAttribute('data-id'));
+    }
+
+    function dragEnd() {
+      const validMoves = [
+        draggedId - 1,
+        draggedId + 1,
+        draggedId - width,
+        draggedId + width
+      ];
+
+      if (validMoves.includes(replacedId)) {
+        let draggedCell = cells[draggedId];
+        let replacedCell = cells[replacedId];
+
+        let temp = draggedCell.innerText;
+        draggedCell.innerText = replacedCell.innerText;
+        replacedCell.innerText = temp;
+
+        checkMatches();
+      }
+    }
+
+    function checkMatches() {
+      let matchFound = false;
+
+      // check rows
+      for (let i = 0; i < width * width; i++) {
+        if (i % width < width - 2) {
+          let a = cells[i];
+          let b = cells[i + 1];
+          let c = cells[i + 2];
+
+          if (a.innerText === b.innerText && b.innerText === c.innerText && a.innerText !== '') {
+            a.innerText = '';
+            b.innerText = '';
+            c.innerText = '';
+            score += 3;
+            matchFound = true;
+          }
+        }
+      }
+
+      // check columns
+      for (let i = 0; i < width * (width - 2); i++) {
+        let a = cells[i];
+        let b = cells[i + width];
+        let c = cells[i + width * 2];
+
+        if (a.innerText === b.innerText && b.innerText === c.innerText && a.innerText !== '') {
+          a.innerText = '';
+          b.innerText = '';
+          c.innerText = '';
+          score += 3;
+          matchFound = true;
+        }
+      }
+
+      scoreDisplay.innerText = score;
+      if (matchFound) {
+        setTimeout(dropHearts, 200);
+      }
+    }
+
+    function dropHearts() {
+      for (let i = width * (width - 1) - 1; i >= 0; i--) {
+        if (cells[i + width] && cells[i + width].innerText === '') {
+          cells[i + width].innerText = cells[i].innerText;
+          cells[i].innerText = '';
+        }
+      }
+
+      for (let i = 0; i < width; i++) {
+        if (cells[i].innerText === '') {
+          cells[i].innerText = randomHeart();
+        }
+      }
+
+      setTimeout(checkMatches, 200);
+    }
+
+    function restartGame() {
+      score = 0;
+      scoreDisplay.innerText = score;
+      createBoard();
+    }
+
+    // Start the game
+    createBoard();
+    setInterval(checkMatches, 1000);
+  </script>
+
+</body>
+  </html>
+  
